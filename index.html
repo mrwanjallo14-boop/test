@@ -11,7 +11,7 @@
         /* إعدادات الصفحة الأساسية */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background-color: #0a0a0a; color: #eee;
+            background-color: #080808; color: #eee;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch; 
@@ -30,8 +30,8 @@
             z-index: 1000; 
             background: #000; 
             width: 100%; 
-            max-width: 800px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.9);
+            max-width: 1000px; /* توسيع المشغل قليلًا */
+            box-shadow: 0 4px 25px rgba(0,0,0,0.9);
         }
         
         video { 
@@ -44,50 +44,53 @@
 
         #contentWrapper {
             width: 100%;
+            max-width: 900px; /* جعل المحتوى أوسع */
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 0 10px;
+            box-sizing: border-box;
         }
 
-        #admin { display: none; width: 95%; max-width: 650px; margin-top: 15px; background: #111; padding: 15px; border-radius: 12px; border: 1px solid #222; }
+        #admin { display: none; width: 100%; margin-top: 15px; }
         
         #viewerCount {
-            background: rgba(76, 175, 80, 0.1); color: #4caf50; padding: 10px;
-            border-radius: 8px; text-align: center; font-size: 14px;
-            margin-bottom: 10px; border: 1px solid rgba(76, 175, 80, 0.2);
+            background: #111; color: #4caf50; padding: 12px;
+            border-radius: 12px; text-align: center; font-size: 14px;
+            margin-bottom: 15px; border: 1px solid #222;
         }
 
         input, select { 
-            width: 100%; padding: 12px; margin: 6px 0; 
-            border: 1px solid #333; border-radius: 8px; 
-            font-size: 14px; background: #1a1a1a; color: #fff;
-            box-sizing: border-box; outline: none; transition: border 0.3s;
+            width: 100%; padding: 14px; margin: 8px 0; 
+            border: 1px solid #333; border-radius: 10px; 
+            font-size: 15px; background: #111; color: #fff;
+            box-sizing: border-box; outline: none;
+            transition: border-color 0.3s;
         }
-        
-        input:focus { border-color: #4a90e2; }
+        input:focus { border-color: #4caf50; }
 
-        .btn-group { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 
         button { 
-            flex: 1; min-width: 100px; padding: 12px; background-color: #222; 
-            color: #fff; border: 1px solid #333; border-radius: 8px; 
-            cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.2s;
+            flex: 1; min-width: 120px; padding: 14px; background-color: #1a1a1a; 
+            color: #fff; border: 1px solid #333; border-radius: 10px; 
+            cursor: pointer; font-size: 14px; font-weight: bold;
+            transition: all 0.2s;
         }
-
         button:active { transform: scale(0.98); }
 
         .btn-sync.active { background-color: #1b5e20; border-color: #2e7d32; }
         .btn-sync.inactive { background-color: #b71c1c; border-color: #c62828; }
         .btn-delete { color: #ff5252; border-color: #5d1b1b; }
 
-        #statusText { text-align: center; font-size: 13px; color: #4caf50; margin: 10px 0; font-weight: bold; }
+        #statusText { text-align: center; font-size: 14px; color: #4caf50; margin: 10px 0; font-weight: bold; }
         
+        /* إخفاء العناصر غير المطلوبة */
         h2, p, span:not(.ep-name-text), h3 { display: none !important; }
 
-        /* تنسيق المكتبة الجديد */
         #librarySection {
-            width: 95%; max-width: 700px; 
-            margin: 20px auto 120px auto; 
+            width: 100%; 
+            margin: 30px auto 120px auto; 
             display: none;
         }
         
@@ -104,69 +107,46 @@
         
         .group-header {
             width: 100%; background: #1a1a1a; padding: 18px; 
-            color: #fff; font-weight: bold; 
+            color: #ffffff; font-weight: bold; font-size: 16px;
             text-align: right; cursor: pointer; display: flex; 
             justify-content: space-between; align-items: center;
             box-sizing: border-box; transition: background 0.3s;
         }
-
         .group-header:hover { background: #222; }
 
-        .group-header::after { 
-            content: '展开'; /* سيتغير للارقام أو السهم */
-            content: '▼'; font-size: 12px; color: #666; transition: transform 0.3s;
-        }
-        .group-header.open::after { transform: rotate(180deg); }
+        .group-header::after { content: '▼'; font-size: 12px; color: #666; transition: 0.3s; }
+        .group-header.open::after { content: '▲'; transform: rotate(180deg); }
 
         .ep-list { 
             display: none; 
             flex-direction: column; 
             padding: 5px;
-            background: #0f0f0f;
+            background: #0c0c0c;
         }
 
         .ep-list.show { display: flex; }
         
         .ep-item { 
             display: flex; align-items: center; 
-            background: #161616; margin-bottom: 6px; 
+            background: #151515; margin-bottom: 6px; 
             width: 100%; border-radius: 8px;
-            transition: all 0.2s;
-            border: 1px solid transparent;
+            border: 1px solid #1f1f1f;
+            transition: background 0.2s;
         }
-        
-        .ep-item:hover { background: #202020; border-color: #333; }
+        .ep-item:hover { background: #1c1c1c; }
         
         .ep-name-clickable {
-            flex-grow: 1; padding: 14px 15px;
+            flex-grow: 1; padding: 15px;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
-            text-align: right;
-            display: flex;
-            align-items: center;
+            text-align: right; /* محاذاة النص لليمين */
         }
 
-        .ep-name-clickable::before {
-            content: '▶'; margin-left: 10px; font-size: 10px; color: #4a90e2; opacity: 0.7;
-        }
+        .ep-name-text { color: #ddd !important; font-size: 15px; display: block !important; }
 
-        .ep-name-text { color: #ddd !important; font-size: 15px; display: block !important; font-weight: 500; }
-
-        /* أزرار التحكم في المكتبة */
-        .lib-control-btn { 
-            background: #1e1e1e; border: 1px solid #333; height: 35px; width: 35px; 
-            border-radius: 6px; font-size: 14px; cursor: pointer; margin: 0 3px;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
-        }
-        .lib-control-btn:hover { background: #333; }
+        .lib-control-btn { background: transparent; border: none; height: 45px; font-size: 18px; cursor: pointer; padding: 0 12px; display: flex; align-items: center; justify-content: center; }
         .single-delete-btn { color: #ff5252; }
         .single-edit-btn { color: #4caf50; }
-        .single-move-btn { color: #ffca28; }
-
-        .admin-controls {
-            display: flex;
-            padding-left: 10px;
-        }
+        .single-move-btn { color: #ffc107; }
         
     </style>
 </head>
@@ -183,7 +163,7 @@
             
             <div style="border-top: 1px solid #222; margin-top: 15px; padding-top: 10px;">
                 <input type="text" id="groupNameInput" placeholder="اسم المجموعة الجديدة (مثال: سبيستون)">
-                <button style="background: #2e7d32; color: white; width: 100%; border: none; margin-top: 5px;" onclick="addGroup()">إضافة مجموعة +</button>
+                <button style="background: #2e7d32; color: white; width: 100%; border: none;" onclick="addGroup()">إضافة مجموعة +</button>
             </div>
 
             <div style="border-top: 1px solid #222; margin-top: 15px; padding-top: 10px;">
@@ -210,12 +190,10 @@
         var videoElement = document.getElementById('myPlayer');
         var hls = new Hls();
         
-        // --- بيانات Firebase التجريبية الجديدة ---
         var dbUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream.json";
         var presenceUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/presence";
         var libraryBaseUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream/library";
         var groupsBaseUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream/groups";
-        // ------------------------------
 
         var lastUrl = ""; 
         var isAdmin = window.location.hash === "#ana";
@@ -297,7 +275,7 @@
             }
 
             if (!groupsData) { 
-                container.innerHTML = "<div style='text-align:center; padding:40px; color:#666; display:block !important; font-size:14px;'>المكتبة فارغة - أضف مجموعة أولاً</div>"; 
+                container.innerHTML = "<div style='text-align:center; padding:30px; color:#666; display:block !important;'>المكتبة فارغة - أضف مجموعة أولاً</div>"; 
                 return; 
             }
             
@@ -336,7 +314,6 @@
                 grouped[gid].forEach(function(ep) {
                     var item = document.createElement('div');
                     item.className = "ep-item";
-                    
                     var nameBox = document.createElement('div');
                     nameBox.className = "ep-name-clickable";
                     nameBox.innerHTML = '<span class="ep-name-text">' + ep.name + '</span>';
@@ -351,9 +328,6 @@
                     };
 
                     if (isAdmin) {
-                        var controlsDiv = document.createElement('div');
-                        controlsDiv.className = "admin-controls";
-
                         var delBtn = document.createElement('button');
                         delBtn.className = "lib-control-btn single-delete-btn";
                         delBtn.innerHTML = "✕";
@@ -369,12 +343,10 @@
                         moveBtn.innerHTML = "📁";
                         moveBtn.onclick = function(e) { e.stopPropagation(); moveEpisode(ep.id); };
 
-                        controlsDiv.appendChild(editBtn);
-                        controlsDiv.appendChild(moveBtn);
-                        controlsDiv.appendChild(delBtn);
-                        
+                        item.appendChild(editBtn);
+                        item.appendChild(moveBtn);
                         item.appendChild(nameBox);
-                        item.appendChild(controlsDiv);
+                        item.appendChild(delBtn);
                     } else {
                         item.appendChild(nameBox);
                     }
