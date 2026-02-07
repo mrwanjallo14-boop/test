@@ -115,8 +115,18 @@
             background: #050505; margin-bottom: 4px; 
             width: 100%; border-radius: 5px;
             justify-content: center;
+            transition: opacity 0.3s;
         }
         
+        /* تلوين الحلقة التي تمت مشاهدتها */
+        .ep-item.watched {
+            background: #0a140a; /* لون داكن مائل للأخضر */
+        }
+        .ep-item.watched .ep-name-text {
+            color: #4caf50 !important; /* لون النص أخضر خافت */
+            opacity: 0.6;
+        }
+
         .ep-name-clickable {
             flex-grow: 1; padding: 12px;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -129,10 +139,6 @@
         .single-delete-btn { color: #883333; }
         .single-edit-btn { color: #338833; }
         .single-move-btn { color: #888833; }
-
-        /* ستايل زر الدبوس الجديد */
-        .pin-btn { color: #555; font-size: 18px; transition: 0.3s; }
-        .pin-btn.pinned { color: #ffeb3b; text-shadow: 0 0 5px orange; }
         
     </style>
 </head>
@@ -189,16 +195,8 @@
         var myUserId = Math.random().toString(36).substring(7);
         var openFolders = {};
 
-        // وظائف الدبوس (Pin Functions)
-        function togglePin(epId) {
-            var currentPinned = localStorage.getItem('pinnedEpisode');
-            if (currentPinned === epId) {
-                localStorage.removeItem('pinnedEpisode');
-            } else {
-                localStorage.setItem('pinnedEpisode', epId);
-            }
-            loadStream(); // لإعادة الرندر وتحديث الشكل
-        }
+        // جلب قائمة الحلقات المشاهدة من ذاكرة المتصفح
+        var watchedEpisodes = JSON.parse(localStorage.getItem('watchedEpisodes') || '{}');
 
         function updatePresence() {
             var xhr = new XMLHttpRequest();
@@ -292,9 +290,6 @@
                 });
             }
 
-            // معرفة المقطع المدبوس
-            var pinnedId = localStorage.getItem('pinnedEpisode');
-
             Object.keys(grouped).forEach(function(gid) {
                 if (grouped[gid].length === 0) return;
                 
@@ -317,17 +312,20 @@
                     var item = document.createElement('div');
                     item.className = "ep-item";
                     
-                    // إضافة زر الدبوس لليسار
-                    var pinBtn = document.createElement('button');
-                    pinBtn.className = "lib-control-btn pin-btn";
-                    pinBtn.innerHTML = "📌";
-                    if (pinnedId === ep.id) pinBtn.classList.add('pinned');
-                    pinBtn.onclick = function(e) { e.stopPropagation(); togglePin(ep.id); };
+                    // فحص إذا كانت الحلقة مشاهدة مسبقاً
+                    if (watchedEpisodes[ep.id]) {
+                        item.classList.add('watched');
+                    }
 
                     var nameBox = document.createElement('div');
                     nameBox.className = "ep-name-clickable";
                     nameBox.innerHTML = '<span class="ep-name-text">' + ep.name + '</span>';
                     nameBox.onclick = function() { 
+                        // حفظ الحالة كـ "مشاهدة"
+                        watchedEpisodes[ep.id] = true;
+                        localStorage.setItem('watchedEpisodes', JSON.stringify(watchedEpisodes));
+                        item.classList.add('watched');
+
                         if (isAdmin) {
                             var xhr = new XMLHttpRequest();
                             xhr.open("PATCH", dbUrl, true);
@@ -336,8 +334,6 @@
                         playMedia(ep.url); 
                         window.scrollTo({top: 0, behavior: 'smooth'}); 
                     };
-
-                    item.appendChild(pinBtn); // وضع الدبوس في البداية
 
                     if (isAdmin) {
                         var delBtn = document.createElement('button');
