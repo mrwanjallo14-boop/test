@@ -115,8 +115,11 @@
             background: #050505; margin-bottom: 4px; 
             width: 100%; border-radius: 5px;
             justify-content: center;
-            position: relative; /* مضاف */
         }
+
+        /* تنسيق الحلقة المشاهدة */
+        .ep-item.watched .ep-name-text { color: #555 !important; }
+        .ep-item.watched { opacity: 0.7; }
         
         .ep-name-clickable {
             flex-grow: 1; padding: 12px;
@@ -125,17 +128,6 @@
         }
 
         .ep-name-text { color: #bbbbbb !important; font-size: 15px; display: block !important; }
-
-        /* ميزة "تمت المشاهدة" */
-        .ep-item.watched .ep-name-text { color: #4caf50 !important; }
-        .ep-item.watched::before { 
-            content: '✅'; 
-            position: absolute; 
-            right: 10px; 
-            font-size: 12px; 
-            top: 50%; 
-            transform: translateY(-50%); 
-        }
 
         .lib-control-btn { background: transparent; border: none; height: 40px; font-size: 16px; cursor: pointer; padding: 0 10px; }
         .single-delete-btn { color: #883333; }
@@ -184,12 +176,10 @@
         var videoElement = document.getElementById('myPlayer');
         var hls = new Hls();
         
-        // --- بيانات Firebase التجريبية الجديدة ---
         var dbUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream.json";
         var presenceUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/presence";
         var libraryBaseUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream/library";
         var groupsBaseUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream/groups";
-        // ------------------------------
 
         var lastUrl = ""; 
         var isAdmin = window.location.hash === "#ana";
@@ -197,17 +187,17 @@
         var myUserId = Math.random().toString(36).substring(7);
         var openFolders = {};
 
-        // وظائف التخزين المحلي للمشاهدة
+        // وظائف تتبع الحلقات المشاهدة
         function markAsWatched(epId) {
-            let watched = JSON.parse(localStorage.getItem('watchedEpisodes') || '[]');
+            let watched = JSON.parse(localStorage.getItem('watched_eps') || '[]');
             if (!watched.includes(epId)) {
                 watched.push(epId);
-                localStorage.setItem('watchedEpisodes', JSON.stringify(watched));
+                localStorage.setItem('watched_eps', JSON.stringify(watched));
             }
         }
 
         function isWatched(epId) {
-            let watched = JSON.parse(localStorage.getItem('watchedEpisodes') || '[]');
+            let watched = JSON.parse(localStorage.getItem('watched_eps') || '[]');
             return watched.includes(epId);
         }
 
@@ -323,22 +313,24 @@
 
                 grouped[gid].forEach(function(ep) {
                     var item = document.createElement('div');
-                    item.className = "ep-item";
-                    if(isWatched(ep.id)) item.classList.add('watched'); // فحص حالة المشاهدة
-
+                    item.className = "ep-item" + (isWatched(ep.id) ? " watched" : "");
                     var nameBox = document.createElement('div');
                     nameBox.className = "ep-name-clickable";
-                    nameBox.innerHTML = '<span class="ep-name-text">' + ep.name + '</span>';
+                    
+                    // عرض علامة الصح إذا كانت الحلقة مشاهدة
+                    var watchedIcon = isWatched(ep.id) ? " ✅" : "";
+                    nameBox.innerHTML = '<span class="ep-name-text">' + ep.name + watchedIcon + '</span>';
+                    
                     nameBox.onclick = function() { 
+                        markAsWatched(ep.id); // حفظ كحلقة مشهودة
                         if (isAdmin) {
                             var xhr = new XMLHttpRequest();
                             xhr.open("PATCH", dbUrl, true);
                             xhr.send(JSON.stringify({ url: ep.url, status: "playing", time: 0 }));
                         }
-                        markAsWatched(ep.id); // حفظ كتمت المشاهدة
-                        item.classList.add('watched');
                         playMedia(ep.url); 
-                        window.scrollTo({top: 0, behavior: 'smooth'}); 
+                        window.scrollTo({top: 0, behavior: 'smooth'});
+                        renderLibrary(libData, groupsData); // تحديث الشكل فوراً
                     };
 
                     if (isAdmin) {
