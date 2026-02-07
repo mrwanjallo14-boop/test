@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title></title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    
+    <style>
+        /* إعدادات الصفحة الأساسية */
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: #000000; color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch; 
+        }
+
+        body {
+            display: flex; flex-direction: column;
+            align-items: center;
+        }
+
+        /* تثبيت المشغل في الأعلى */
+        .card { 
+            position: -webkit-sticky; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            background: #000; 
+            width: 100%; 
+            max-width: 800px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+        }
+        
+        video { 
+            width: 100%; 
+            display: block; 
+            aspect-ratio: 16/9; 
+            background: #000; 
+            outline: none; 
+        }
+
+        #contentWrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #admin { display: none; width: 95%; max-width: 650px; margin-top: 15px; }
+        
+        #viewerCount {
+            background: #0a0a0a; color: #4caf50; padding: 8px;
+            border-radius: 8px; text-align: center; font-size: 14px;
+            margin-bottom: 10px; border: 1px solid #1a1a1a;
+        }
+
+        input, select { 
+            width: 100%; padding: 12px; margin: 6px 0; 
+            border: 1px solid #222; border-radius: 8px; 
+            font-size: 14px; background: #0a0a0a; color: #fff;
+            box-sizing: border-box; outline: none;
+        }
+
+        .btn-group { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+        button { 
+            flex: 1; min-width: 100px; padding: 12px; background-color: #111; 
+            color: #fff; border: 1px solid #222; border-radius: 8px; 
+            cursor: pointer; font-size: 14px; font-weight: bold;
+        }
+
+        .btn-sync.active { background-color: #1b5e20; border-color: #2e7d32; }
+        .btn-sync.inactive { background-color: #b71c1c; border-color: #c62828; }
+        .btn-delete { color: #ff5252; border-color: #5d1b1b; }
+
+        #statusText { text-align: center; font-size: 13px; color: #4caf50; margin: 10px 0; font-weight: bold; }
+        
+        h2, p, span:not(.ep-name-text), h3 { display: none !important; }
+
+        #librarySection {
+            width: 95%; max-width: 700px; 
+            margin: 20px auto 120px auto; 
+            display: none;
+        }
+        
+        .lib-title { display: none; } 
+
+        .group-container { width: 100%; margin-bottom: 10px; border-bottom: 1px solid #111; }
+        
+        .group-header {
+            width: 100%; background: #111; padding: 15px; 
+            border-radius: 8px; color: #bbbbbb; font-weight: bold; 
+            text-align: center; cursor: pointer; display: flex; 
+            justify-content: center; align-items: center;
+            box-sizing: border-box; position: relative;
+        }
+
+        .group-header::after { content: '▼'; font-size: 12px; color: #444; position: absolute; left: 15px; }
+        .group-header.open::after { content: '▲'; }
+
+        .ep-list { 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 10px 0;
+        }
+
+        .ep-list.show { display: flex; }
+        
+        .ep-item { 
+            display: flex; align-items: center; 
+            background: #050505; margin-bottom: 4px; 
+            width: 100%; border-radius: 5px;
+            justify-content: center;
+        }
+        
+        .ep-name-clickable {
+            flex-grow: 1; padding: 12px;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+            text-align: center;
+        }
+
+        .ep-name-text { color: #bbbbbb !important; font-size: 15px; display: block !important; }
+
+        .lib-control-btn { background: transparent; border: none; height: 40px; font-size: 16px; cursor: pointer; padding: 0 10px; }
+        .single-delete-btn { color: #883333; }
+        .single-edit-btn { color: #338833; }
+        .single-move-btn { color: #888833; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <video id="myPlayer" controls autoplay playsinline></video>
+    </div>
+
+    <div id="contentWrapper">
+        <div id="admin">
+            <div id="viewerCount">عدد المتصلين الآن: جاري التحميل...</div>
+            <input type="text" id="urlInput" placeholder="رابط البث المباشر الأساسي..." onpaste="handlePaste(event)">
+            
+            <div style="border-top: 1px solid #111; margin-top: 15px; padding-top: 10px;">
+                <input type="text" id="groupNameInput" placeholder="اسم المجموعة الجديدة (مثال: سبيستون)">
+                <button style="background: #2e7d32; color: white; width: 100%; border: none;" onclick="addGroup()">إضافة مجموعة +</button>
+            </div>
+
+            <div style="border-top: 1px solid #111; margin-top: 15px; padding-top: 10px;">
+                <input type="text" id="epNameInput" placeholder="اسم العمل / الحلقة">
+                <input type="text" id="epUrlInput" placeholder="رابط الفيديو المباشر...">
+                <select id="groupSelect"><option value="">اختر المجموعة...</option></select>
+                <button style="background: #1a3a8a; color: white; width: 100%; border: none; margin-top: 5px;" onclick="addEpisode()">إضافة للمكتبة +</button>
+            </div>
+
+            <div class="btn-group" style="margin-top: 15px; border-top: 1px solid #111; padding-top: 10px;">
+                <button id="syncToggleBtn" class="btn-sync" onclick="toggleSync()">جاري التحميل...</button>
+                <button class="btn-delete" onclick="deleteVideo()">حذف فيديو البث 🗑️</button>
+            </div>
+            <div id="statusText">تم التحديث بنجاح ✅</div>
+        </div>
+
+        <div id="librarySection">
+            <div class="lib-title">المكتبة</div> 
+            <div id="episodesContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        var videoElement = document.getElementById('myPlayer');
+        var hls = new Hls();
+        
+        // --- بيانات Firebase التجريبية الجديدة ---
+        var dbUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream.json";
+        var presenceUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/presence";
+        var libraryBaseUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream/library";
+        var groupsBaseUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream/groups";
+        // ------------------------------
+
+        var lastUrl = ""; 
+        var isAdmin = window.location.hash === "#ana";
+        var isSyncEnabled = true;
+        var myUserId = Math.random().toString(36).substring(7);
+        var openFolders = {};
+
+        function updatePresence() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("PUT", presenceUrl + "/" + myUserId + ".json", true);
+            xhr.send(JSON.stringify(Date.now()));
+        }
+
+        function fetchViewerCount() {
+            if (!isAdmin) return;
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", presenceUrl + ".json", true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    var count = 0;
+                    var now = Date.now();
+                    if (data) {
+                        Object.keys(data).forEach(function(key) {
+                            if (now - data[key] < 10000) count++;
+                            else if (now - data[key] > 60000) {
+                                var delXhr = new XMLHttpRequest();
+                                delXhr.open("DELETE", presenceUrl + "/" + key + ".json", true);
+                                delXhr.send();
+                            }
+                        });
+                    }
+                    document.getElementById('viewerCount').innerText = "عدد المتصلين الآن: " + count;
+                }
+            };
+            xhr.send();
+        }
+
+        function playMedia(url) {
+            if (!url) { videoElement.src = ""; if (hls) hls.destroy(); lastUrl = ""; return; }
+            if (url === lastUrl) return;
+            lastUrl = url;
+            if (Hls.isSupported() && (url.includes('m3u8') || url.includes('.ts'))) {
+                hls.destroy(); hls = new Hls();
+                hls.loadSource(url); hls.attachMedia(videoElement);
+            } else { videoElement.src = url; }
+            videoElement.play().catch(function(e){});
+        }
+
+        function toggleFolder(header, gid) {
+            header.classList.toggle('open');
+            var list = header.nextElementSibling;
+            list.classList.toggle('show');
+            openFolders[gid] = list.classList.contains('show');
+        }
+
+        function renderLibrary(libData, groupsData) {
+            var container = document.getElementById('episodesContainer');
+            var currentHeaders = container.querySelectorAll('.group-header');
+            currentHeaders.forEach(function(h) {
+                var gid = h.getAttribute('data-gid');
+                if(gid) openFolders[gid] = h.classList.contains('open');
+            });
+
+            container.innerHTML = "";
+            
+            var gSelect = document.getElementById('groupSelect');
+            if(isAdmin && gSelect) {
+                var currentSelection = gSelect.value;
+                gSelect.innerHTML = '<option value="" disabled selected>اختر المجموعة...</option>';
+                if(groupsData) {
+                    Object.keys(groupsData).forEach(function(gk) {
+                        var opt = document.createElement('option');
+                        opt.value = gk; opt.innerText = groupsData[gk].name;
+                        gSelect.appendChild(opt);
+                    });
+                }
+                gSelect.value = currentSelection;
+            }
+
+            if (!groupsData) { 
+                container.innerHTML = "<div style='text-align:center; padding:30px; color:#444; display:block !important;'>المكتبة فارغة - أضف مجموعة أولاً</div>"; 
+                return; 
+            }
+            
+            var grouped = {};
+            Object.keys(groupsData).forEach(function(k){ grouped[k] = []; });
+
+            if(libData) {
+                Object.keys(libData).forEach(function(key) {
+                    var ep = libData[key];
+                    var gid = ep.groupId;
+                    if(gid && grouped[gid]) {
+                        ep.id = key;
+                        grouped[gid].push(ep);
+                    }
+                });
+            }
+
+            Object.keys(grouped).forEach(function(gid) {
+                if (grouped[gid].length === 0) return;
+                
+                var groupWrapper = document.createElement('div');
+                groupWrapper.className = "group-container";
+
+                var header = document.createElement('div');
+                header.className = "group-header";
+                header.setAttribute('data-gid', gid);
+                header.innerText = "📁 " + (groupsData[gid] ? groupsData[gid].name : "مجموعة");
+                
+                if (openFolders[gid]) header.classList.add('open');
+                header.onclick = function() { toggleFolder(this, gid); };
+
+                var listDiv = document.createElement('div');
+                listDiv.className = "ep-list";
+                if (openFolders[gid]) listDiv.classList.add('show');
+
+                grouped[gid].forEach(function(ep) {
+                    var item = document.createElement('div');
+                    item.className = "ep-item";
+                    var nameBox = document.createElement('div');
+                    nameBox.className = "ep-name-clickable";
+                    nameBox.innerHTML = '<span class="ep-name-text">' + ep.name + '</span>';
+                    nameBox.onclick = function() { 
+                        if (isAdmin) {
+                            var xhr = new XMLHttpRequest();
+                            xhr.open("PATCH", dbUrl, true);
+                            xhr.send(JSON.stringify({ url: ep.url, status: "playing", time: 0 }));
+                        }
+                        playMedia(ep.url); 
+                        window.scrollTo({top: 0, behavior: 'smooth'}); 
+                    };
+
+                    if (isAdmin) {
+                        var delBtn = document.createElement('button');
+                        delBtn.className = "lib-control-btn single-delete-btn";
+                        delBtn.innerHTML = "✕";
+                        delBtn.onclick = function(e) { e.stopPropagation(); deleteSingleEpisode(ep.id); };
+                        
+                        var editBtn = document.createElement('button');
+                        editBtn.className = "lib-control-btn single-edit-btn";
+                        editBtn.innerHTML = "✏️";
+                        editBtn.onclick = function(e) { e.stopPropagation(); editSingleEpisode(ep.id, ep.name, ep.url); };
+
+                        var moveBtn = document.createElement('button');
+                        moveBtn.className = "lib-control-btn single-move-btn";
+                        moveBtn.innerHTML = "📁";
+                        moveBtn.onclick = function(e) { e.stopPropagation(); moveEpisode(ep.id); };
+
+                        item.appendChild(editBtn);
+                        item.appendChild(moveBtn);
+                        item.appendChild(nameBox);
+                        item.appendChild(delBtn);
+                    } else {
+                        item.appendChild(nameBox);
+                    }
+                    listDiv.appendChild(item);
+                });
+
+                groupWrapper.appendChild(header);
+                groupWrapper.appendChild(listDiv);
+                container.appendChild(groupWrapper);
+            });
+        }
+
+        function addGroup() {
+            var name = document.getElementById('groupNameInput').value.trim();
+            if (!name) return;
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", groupsBaseUrl + ".json", true);
+            xhr.onload = function() { document.getElementById('groupNameInput').value = ""; loadStream(); };
+            xhr.send(JSON.stringify({ name: name }));
+        }
+
+        function moveEpisode(key) {
+            var gSelect = document.getElementById('groupSelect');
+            var options = "";
+            for(var i=1; i<gSelect.options.length; i++) {
+                options += i + "- " + gSelect.options[i].text + "\n";
+            }
+            var choice = prompt("اختر رقم المجموعة للنقل إليها:\n" + options);
+            if(choice && gSelect.options[choice]) {
+                var newGroupId = gSelect.options[choice].value;
+                var xhr = new XMLHttpRequest();
+                xhr.open("PATCH", libraryBaseUrl + "/" + key + ".json", true);
+                xhr.onload = function() { showStatus("تم النقل ✅"); loadStream(); };
+                xhr.send(JSON.stringify({ groupId: newGroupId }));
+            }
+        }
+
+        function editSingleEpisode(key, oldName, oldUrl) {
+            var newName = prompt("تعديل اسم المقطع:", oldName);
+            if (newName === null) return;
+            var newUrl = prompt("تعديل رابط المقطع:", oldUrl);
+            if (newUrl === null) return;
+            var xhr = new XMLHttpRequest();
+            xhr.open("PATCH", libraryBaseUrl + "/" + key + ".json", true);
+            xhr.onload = function() { showStatus("تم التعديل ✅"); loadStream(); };
+            xhr.send(JSON.stringify({ name: newName, url: newUrl }));
+        }
+
+        function deleteSingleEpisode(key) {
+            if(confirm("حذف هذه الحلقة؟")) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("DELETE", libraryBaseUrl + "/" + key + ".json", true);
+                xhr.onload = function() { showStatus("تم الحذف"); loadStream(); };
+                xhr.send();
+            }
+        }
+
+        function syncPlayer(data) {
+            if (!data) return;
+            isSyncEnabled = data.syncEnabled !== false; 
+            updateSyncButtonUI();
+            var lib = document.getElementById('librarySection');
+            if (isAdmin || !isSyncEnabled) {
+                lib.style.display = "block";
+                renderLibrary(data.library, data.groups);
+            } else {
+                lib.style.display = "none";
+            }
+            if (isSyncEnabled && !isAdmin) {
+                if (data.url !== lastUrl) playMedia(data.url);
+                if (Math.abs(videoElement.currentTime - data.time) > 3) videoElement.currentTime = data.time;
+                if (data.status === "playing" && videoElement.paused) videoElement.play().catch(function(e){});
+                else if (data.status === "paused" && !videoElement.paused) videoElement.pause();
+            }
+        }
+
+        function loadStream() {
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", dbUrl, true);
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    syncPlayer(data);
+                }
+            };
+            xhr.send();
+        }
+
+        function toggleSync() {
+            if (!isAdmin) return;
+            isSyncEnabled = !isSyncEnabled;
+            var xhr = new XMLHttpRequest();
+            xhr.open("PATCH", dbUrl, true);
+            xhr.send(JSON.stringify({ syncEnabled: isSyncEnabled }));
+            updateSyncButtonUI();
+        }
+
+        function updateSyncButtonUI() {
+            var btn = document.getElementById('syncToggleBtn');
+            if (btn) {
+                if (isSyncEnabled) {
+                    btn.innerText = "المزامنة: مفعلة ✅";
+                    btn.className = "btn-sync active";
+                } else {
+                    btn.innerText = "المزامنة: معطلة ❌";
+                    btn.className = "btn-sync inactive";
+                }
+            }
+        }
+
+        function addEpisode() {
+            var name = document.getElementById('epNameInput').value.trim();
+            var url = document.getElementById('epUrlInput').value.trim();
+            var gid = document.getElementById('groupSelect').value;
+            if (!name || !url || !gid) {
+                alert("يرجى إكمال البيانات واختيار مجموعة");
+                return;
+            }
+            
+            openFolders[gid] = true;
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", libraryBaseUrl + ".json", true);
+            xhr.onload = function() {
+                document.getElementById('epNameInput').value = "";
+                document.getElementById('epUrlInput').value = "";
+                showStatus("تمت إضافة: " + name);
+                loadStream();
+            };
+            xhr.send(JSON.stringify({ name: name, url: url, groupId: gid }));
+        }
+
+        function updateDatabaseState() {
+            if (!isAdmin || !isSyncEnabled) return;
+            var xhr = new XMLHttpRequest();
+            xhr.open("PATCH", dbUrl, true);
+            var state = { status: videoElement.paused ? "paused" : "playing", time: videoElement.currentTime };
+            xhr.send(JSON.stringify(state));
+        }
+
+        setInterval(function() {
+            updatePresence();
+            if (!isAdmin) loadStream();
+            else { 
+                if (isSyncEnabled) updateDatabaseState(); 
+                loadStream();
+                fetchViewerCount();
+            }
+        }, 5000);
+
+        if (isAdmin) {
+            ['play', 'pause', 'seeked'].forEach(function(ev) {
+                videoElement.addEventListener(ev, function() { if(isSyncEnabled) updateDatabaseState(); });
+            });
+        }
+
+        function handlePaste(event) {
+            setTimeout(function() {
+                var val = document.getElementById('urlInput').value.trim();
+                if (val) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("PATCH", dbUrl, true);
+                    xhr.send(JSON.stringify({ url: val, status: "playing", time: 0 }));
+                    document.getElementById('urlInput').value = ''; 
+                    showStatus("تم التحديث ✅");
+                }
+            }, 100);
+        }
+
+        function deleteVideo() {
+            if(confirm("حذف بث؟")) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("PATCH", dbUrl, true);
+                xhr.send(JSON.stringify({ url: "", status: "paused", time: 0 }));
+            }
+        }
+
+        function showStatus(msg) {
+            var status = document.getElementById('statusText');
+            if(status) {
+                status.innerText = msg;
+                status.style.display = "block";
+                setTimeout(function() { status.style.display = "none"; }, 3000);
+            }
+        }
+
+        window.onload = function() {
+            loadStream();
+            updatePresence();
+            if(isAdmin) {
+                document.getElementById('admin').style.display = "block";
+                fetchViewerCount();
+            }
+        };
+    </script>
+</body>
+</html>
