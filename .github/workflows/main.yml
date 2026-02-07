@@ -1,0 +1,38 @@
+name: Super Video Bot
+on:
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'رابط الفيديو'
+        required: true
+      video_name:
+        description: 'اسم الفيديو ليظهر في الموقع'
+        required: true
+
+jobs:
+  process-video:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          pip install yt-dlp
+          npm install firebase-admin
+
+      - name: Download & Convert
+        run: |
+          # تحميل الفيديو بأفضل جودة وتحويله لـ mp4 (Safari Friendly)
+          yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+          "${{ github.event.inputs.video_url }}" -o "video_raw.tmp"
+          
+          ffmpeg -i video_raw.tmp -vcodec libx264 -acodec aac -strict -2 "final_video.mp4"
+
+      - name: Upload to Firebase & Update Site
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+        run: node upload.js "final_video.mp4" "${{ github.event.inputs.video_name }}"
