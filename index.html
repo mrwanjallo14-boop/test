@@ -186,6 +186,7 @@
         var isSyncEnabled = true;
         var myUserId = Math.random().toString(36).substring(7);
         var openFolders = {};
+        var currentLibraryData = null; // مخزن للبيانات الحالية للتشغيل التلقائي
 
         // وظائف تتبع الحلقات المشاهدة
         function markAsWatched(epId) {
@@ -251,6 +252,7 @@
         }
 
         function renderLibrary(libData, groupsData) {
+            currentLibraryData = libData; // حفظ البيانات للبحث عن الحلقة التالية
             var container = document.getElementById('episodesContainer');
             var currentHeaders = container.querySelectorAll('.group-header');
             currentHeaders.forEach(function(h) {
@@ -364,6 +366,36 @@
                 container.appendChild(groupWrapper);
             });
         }
+
+        // ميزة التشغيل التلقائي
+        videoElement.onended = function() {
+            if (!currentLibraryData) return;
+            
+            var episodes = Object.keys(currentLibraryData).map(function(k) {
+                var e = currentLibraryData[k];
+                e.id = k;
+                return e;
+            });
+
+            // البحث عن ترتيب الحلقة الحالية
+            var currentIndex = episodes.findIndex(function(e) { return e.url === lastUrl; });
+            
+            if (currentIndex !== -1 && currentIndex < episodes.length - 1) {
+                var nextEp = episodes[currentIndex + 1];
+                
+                // التأكد من أن الحلقة التالية في نفس المجموعة لتجنب القفز بين المجموعات بشكل عشوائي
+                if (nextEp.groupId === episodes[currentIndex].groupId) {
+                    markAsWatched(nextEp.id);
+                    if (isAdmin) {
+                        var xhr = new XMLHttpRequest();
+                        xhr.open("PATCH", dbUrl, true);
+                        xhr.send(JSON.stringify({ url: nextEp.url, status: "playing", time: 0 }));
+                    }
+                    playMedia(nextEp.url);
+                    showStatus("تشغيل الحلقة التالية: " + nextEp.name);
+                }
+            }
+        };
 
         function addGroup() {
             var name = document.getElementById('groupNameInput').value.trim();
