@@ -115,18 +115,9 @@
             background: #050505; margin-bottom: 4px; 
             width: 100%; border-radius: 5px;
             justify-content: center;
-            transition: opacity 0.3s;
+            position: relative; /* مضاف */
         }
         
-        /* تلوين الحلقة التي تمت مشاهدتها */
-        .ep-item.watched {
-            background: #0a140a; /* لون داكن مائل للأخضر */
-        }
-        .ep-item.watched .ep-name-text {
-            color: #4caf50 !important; /* لون النص أخضر خافت */
-            opacity: 0.6;
-        }
-
         .ep-name-clickable {
             flex-grow: 1; padding: 12px;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
@@ -134,6 +125,17 @@
         }
 
         .ep-name-text { color: #bbbbbb !important; font-size: 15px; display: block !important; }
+
+        /* ميزة "تمت المشاهدة" */
+        .ep-item.watched .ep-name-text { color: #4caf50 !important; }
+        .ep-item.watched::before { 
+            content: '✅'; 
+            position: absolute; 
+            right: 10px; 
+            font-size: 12px; 
+            top: 50%; 
+            transform: translateY(-50%); 
+        }
 
         .lib-control-btn { background: transparent; border: none; height: 40px; font-size: 16px; cursor: pointer; padding: 0 10px; }
         .single-delete-btn { color: #883333; }
@@ -195,8 +197,19 @@
         var myUserId = Math.random().toString(36).substring(7);
         var openFolders = {};
 
-        // جلب قائمة الحلقات المشاهدة من ذاكرة المتصفح
-        var watchedEpisodes = JSON.parse(localStorage.getItem('watchedEpisodes') || '{}');
+        // وظائف التخزين المحلي للمشاهدة
+        function markAsWatched(epId) {
+            let watched = JSON.parse(localStorage.getItem('watchedEpisodes') || '[]');
+            if (!watched.includes(epId)) {
+                watched.push(epId);
+                localStorage.setItem('watchedEpisodes', JSON.stringify(watched));
+            }
+        }
+
+        function isWatched(epId) {
+            let watched = JSON.parse(localStorage.getItem('watchedEpisodes') || '[]');
+            return watched.includes(epId);
+        }
 
         function updatePresence() {
             var xhr = new XMLHttpRequest();
@@ -311,26 +324,19 @@
                 grouped[gid].forEach(function(ep) {
                     var item = document.createElement('div');
                     item.className = "ep-item";
-                    
-                    // فحص إذا كانت الحلقة مشاهدة مسبقاً
-                    if (watchedEpisodes[ep.id]) {
-                        item.classList.add('watched');
-                    }
+                    if(isWatched(ep.id)) item.classList.add('watched'); // فحص حالة المشاهدة
 
                     var nameBox = document.createElement('div');
                     nameBox.className = "ep-name-clickable";
                     nameBox.innerHTML = '<span class="ep-name-text">' + ep.name + '</span>';
                     nameBox.onclick = function() { 
-                        // حفظ الحالة كـ "مشاهدة"
-                        watchedEpisodes[ep.id] = true;
-                        localStorage.setItem('watchedEpisodes', JSON.stringify(watchedEpisodes));
-                        item.classList.add('watched');
-
                         if (isAdmin) {
                             var xhr = new XMLHttpRequest();
                             xhr.open("PATCH", dbUrl, true);
                             xhr.send(JSON.stringify({ url: ep.url, status: "playing", time: 0 }));
                         }
+                        markAsWatched(ep.id); // حفظ كتمت المشاهدة
+                        item.classList.add('watched');
                         playMedia(ep.url); 
                         window.scrollTo({top: 0, behavior: 'smooth'}); 
                     };
