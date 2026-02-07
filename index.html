@@ -11,8 +11,8 @@
         /* إعدادات الصفحة الأساسية */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background-color: #080808; color: #eee;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #000000; color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch; 
         }
@@ -30,8 +30,8 @@
             z-index: 1000; 
             background: #000; 
             width: 100%; 
-            max-width: 1000px; /* توسيع المشغل قليلًا */
-            box-shadow: 0 4px 25px rgba(0,0,0,0.9);
+            max-width: 800px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8);
         }
         
         video { 
@@ -44,109 +44,95 @@
 
         #contentWrapper {
             width: 100%;
-            max-width: 900px; /* جعل المحتوى أوسع */
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 0 10px;
-            box-sizing: border-box;
         }
 
-        #admin { display: none; width: 100%; margin-top: 15px; }
+        #admin { display: none; width: 95%; max-width: 650px; margin-top: 15px; }
         
         #viewerCount {
-            background: #111; color: #4caf50; padding: 12px;
-            border-radius: 12px; text-align: center; font-size: 14px;
-            margin-bottom: 15px; border: 1px solid #222;
+            background: #0a0a0a; color: #4caf50; padding: 8px;
+            border-radius: 8px; text-align: center; font-size: 14px;
+            margin-bottom: 10px; border: 1px solid #1a1a1a;
         }
 
         input, select { 
-            width: 100%; padding: 14px; margin: 8px 0; 
-            border: 1px solid #333; border-radius: 10px; 
-            font-size: 15px; background: #111; color: #fff;
+            width: 100%; padding: 12px; margin: 6px 0; 
+            border: 1px solid #222; border-radius: 8px; 
+            font-size: 14px; background: #0a0a0a; color: #fff;
             box-sizing: border-box; outline: none;
-            transition: border-color 0.3s;
         }
-        input:focus { border-color: #4caf50; }
 
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .btn-group { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 
         button { 
-            flex: 1; min-width: 120px; padding: 14px; background-color: #1a1a1a; 
-            color: #fff; border: 1px solid #333; border-radius: 10px; 
+            flex: 1; min-width: 100px; padding: 12px; background-color: #111; 
+            color: #fff; border: 1px solid #222; border-radius: 8px; 
             cursor: pointer; font-size: 14px; font-weight: bold;
-            transition: all 0.2s;
         }
-        button:active { transform: scale(0.98); }
 
         .btn-sync.active { background-color: #1b5e20; border-color: #2e7d32; }
         .btn-sync.inactive { background-color: #b71c1c; border-color: #c62828; }
         .btn-delete { color: #ff5252; border-color: #5d1b1b; }
 
-        #statusText { text-align: center; font-size: 14px; color: #4caf50; margin: 10px 0; font-weight: bold; }
+        #statusText { text-align: center; font-size: 13px; color: #4caf50; margin: 10px 0; font-weight: bold; }
         
-        /* إخفاء العناصر غير المطلوبة */
         h2, p, span:not(.ep-name-text), h3 { display: none !important; }
 
         #librarySection {
-            width: 100%; 
-            margin: 30px auto 120px auto; 
+            width: 95%; max-width: 700px; 
+            margin: 20px auto 120px auto; 
             display: none;
         }
         
         .lib-title { display: none; } 
 
-        .group-container { 
-            width: 100%; 
-            margin-bottom: 15px; 
-            background: #111;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid #222;
-        }
+        .group-container { width: 100%; margin-bottom: 10px; border-bottom: 1px solid #111; }
         
         .group-header {
-            width: 100%; background: #1a1a1a; padding: 18px; 
-            color: #ffffff; font-weight: bold; font-size: 16px;
-            text-align: right; cursor: pointer; display: flex; 
-            justify-content: space-between; align-items: center;
-            box-sizing: border-box; transition: background 0.3s;
+            width: 100%; background: #111; padding: 15px; 
+            border-radius: 8px; color: #bbbbbb; font-weight: bold; 
+            text-align: center; cursor: pointer; display: flex; 
+            justify-content: center; align-items: center;
+            box-sizing: border-box; position: relative;
         }
-        .group-header:hover { background: #222; }
 
-        .group-header::after { content: '▼'; font-size: 12px; color: #666; transition: 0.3s; }
-        .group-header.open::after { content: '▲'; transform: rotate(180deg); }
+        .group-header::after { content: '▼'; font-size: 12px; color: #444; position: absolute; left: 15px; }
+        .group-header.open::after { content: '▲'; }
 
         .ep-list { 
             display: none; 
             flex-direction: column; 
-            padding: 5px;
-            background: #0c0c0c;
+            align-items: center; 
+            padding: 10px 0;
         }
 
         .ep-list.show { display: flex; }
         
         .ep-item { 
             display: flex; align-items: center; 
-            background: #151515; margin-bottom: 6px; 
-            width: 100%; border-radius: 8px;
-            border: 1px solid #1f1f1f;
-            transition: background 0.2s;
+            background: #050505; margin-bottom: 4px; 
+            width: 100%; border-radius: 5px;
+            justify-content: center;
         }
-        .ep-item:hover { background: #1c1c1c; }
         
         .ep-name-clickable {
-            flex-grow: 1; padding: 15px;
+            flex-grow: 1; padding: 12px;
             cursor: pointer; -webkit-tap-highlight-color: transparent;
-            text-align: right; /* محاذاة النص لليمين */
+            text-align: center;
         }
 
-        .ep-name-text { color: #ddd !important; font-size: 15px; display: block !important; }
+        .ep-name-text { color: #bbbbbb !important; font-size: 15px; display: block !important; }
 
-        .lib-control-btn { background: transparent; border: none; height: 45px; font-size: 18px; cursor: pointer; padding: 0 12px; display: flex; align-items: center; justify-content: center; }
-        .single-delete-btn { color: #ff5252; }
-        .single-edit-btn { color: #4caf50; }
-        .single-move-btn { color: #ffc107; }
+        .lib-control-btn { background: transparent; border: none; height: 40px; font-size: 16px; cursor: pointer; padding: 0 10px; }
+        .single-delete-btn { color: #883333; }
+        .single-edit-btn { color: #338833; }
+        .single-move-btn { color: #888833; }
+
+        /* ستايل زر الدبوس الجديد */
+        .pin-btn { color: #555; font-size: 18px; transition: 0.3s; }
+        .pin-btn.pinned { color: #ffeb3b; text-shadow: 0 0 5px orange; }
         
     </style>
 </head>
@@ -161,19 +147,19 @@
             <div id="viewerCount">عدد المتصلين الآن: جاري التحميل...</div>
             <input type="text" id="urlInput" placeholder="رابط البث المباشر الأساسي..." onpaste="handlePaste(event)">
             
-            <div style="border-top: 1px solid #222; margin-top: 15px; padding-top: 10px;">
+            <div style="border-top: 1px solid #111; margin-top: 15px; padding-top: 10px;">
                 <input type="text" id="groupNameInput" placeholder="اسم المجموعة الجديدة (مثال: سبيستون)">
                 <button style="background: #2e7d32; color: white; width: 100%; border: none;" onclick="addGroup()">إضافة مجموعة +</button>
             </div>
 
-            <div style="border-top: 1px solid #222; margin-top: 15px; padding-top: 10px;">
+            <div style="border-top: 1px solid #111; margin-top: 15px; padding-top: 10px;">
                 <input type="text" id="epNameInput" placeholder="اسم العمل / الحلقة">
                 <input type="text" id="epUrlInput" placeholder="رابط الفيديو المباشر...">
                 <select id="groupSelect"><option value="">اختر المجموعة...</option></select>
                 <button style="background: #1a3a8a; color: white; width: 100%; border: none; margin-top: 5px;" onclick="addEpisode()">إضافة للمكتبة +</button>
             </div>
 
-            <div class="btn-group" style="margin-top: 15px; border-top: 1px solid #222; padding-top: 10px;">
+            <div class="btn-group" style="margin-top: 15px; border-top: 1px solid #111; padding-top: 10px;">
                 <button id="syncToggleBtn" class="btn-sync" onclick="toggleSync()">جاري التحميل...</button>
                 <button class="btn-delete" onclick="deleteVideo()">حذف فيديو البث 🗑️</button>
             </div>
@@ -190,16 +176,29 @@
         var videoElement = document.getElementById('myPlayer');
         var hls = new Hls();
         
+        // --- بيانات Firebase التجريبية الجديدة ---
         var dbUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream.json";
         var presenceUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/presence";
         var libraryBaseUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream/library";
         var groupsBaseUrl = "https://test-f6ccf-default-rtdb.firebaseio.com/live_stream/groups";
+        // ------------------------------
 
         var lastUrl = ""; 
         var isAdmin = window.location.hash === "#ana";
         var isSyncEnabled = true;
         var myUserId = Math.random().toString(36).substring(7);
         var openFolders = {};
+
+        // وظائف الدبوس (Pin Functions)
+        function togglePin(epId) {
+            var currentPinned = localStorage.getItem('pinnedEpisode');
+            if (currentPinned === epId) {
+                localStorage.removeItem('pinnedEpisode');
+            } else {
+                localStorage.setItem('pinnedEpisode', epId);
+            }
+            loadStream(); // لإعادة الرندر وتحديث الشكل
+        }
 
         function updatePresence() {
             var xhr = new XMLHttpRequest();
@@ -275,7 +274,7 @@
             }
 
             if (!groupsData) { 
-                container.innerHTML = "<div style='text-align:center; padding:30px; color:#666; display:block !important;'>المكتبة فارغة - أضف مجموعة أولاً</div>"; 
+                container.innerHTML = "<div style='text-align:center; padding:30px; color:#444; display:block !important;'>المكتبة فارغة - أضف مجموعة أولاً</div>"; 
                 return; 
             }
             
@@ -292,6 +291,9 @@
                     }
                 });
             }
+
+            // معرفة المقطع المدبوس
+            var pinnedId = localStorage.getItem('pinnedEpisode');
 
             Object.keys(grouped).forEach(function(gid) {
                 if (grouped[gid].length === 0) return;
@@ -314,6 +316,14 @@
                 grouped[gid].forEach(function(ep) {
                     var item = document.createElement('div');
                     item.className = "ep-item";
+                    
+                    // إضافة زر الدبوس لليسار
+                    var pinBtn = document.createElement('button');
+                    pinBtn.className = "lib-control-btn pin-btn";
+                    pinBtn.innerHTML = "📌";
+                    if (pinnedId === ep.id) pinBtn.classList.add('pinned');
+                    pinBtn.onclick = function(e) { e.stopPropagation(); togglePin(ep.id); };
+
                     var nameBox = document.createElement('div');
                     nameBox.className = "ep-name-clickable";
                     nameBox.innerHTML = '<span class="ep-name-text">' + ep.name + '</span>';
@@ -326,6 +336,8 @@
                         playMedia(ep.url); 
                         window.scrollTo({top: 0, behavior: 'smooth'}); 
                     };
+
+                    item.appendChild(pinBtn); // وضع الدبوس في البداية
 
                     if (isAdmin) {
                         var delBtn = document.createElement('button');
