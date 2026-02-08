@@ -1,4 +1,4 @@
-name: Remote Video Downloader & Converter
+name: Remote Video Downloader, Converter & Email Notification
 
 on:
   workflow_dispatch:
@@ -17,24 +17,39 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Tools (yt-dlp & ffmpeg)
+      - name: Install Tools (yt-dlp, ffmpeg, mailutils)
         run: |
           sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
           sudo chmod a+rx /usr/local/bin/yt-dlp
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+          sudo apt-get update && sudo apt-get install -y ffmpeg mailutils
 
       - name: Download and Convert
+        id: process_video
         run: |
           mkdir -p output
+          # تحميل الفيديو وتحويله لـ mp4
           yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
           --merge-output-format mp4 \
-          -o "output/%(title)s.%(ext)s" \
+          -o "output/video_result.mp4" \
           "${{ github.event.inputs.video_url }}"
+          
+          # الحصول على اسم الفيديو الأصلي لإرساله في الإيميل
+          TITLE=$(yt-dlp --get-title "${{ github.event.inputs.video_url }}")
+          echo "video_title=$TITLE" >> $GITHUB_ENV
 
-      - name: Upload to GitHub Releases (Direct Link)
+      - name: Upload to GitHub Releases
+        id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: converted-videos
-          files: output/*.mp4
+          tag_name: v${{ github.run_number }}
+          files: output/video_result.mp4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Send Email Notification
+        run: |
+          # الرابط المباشر للملف في الـ Release
+          DIRECT_LINK="https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/video_result.mp4"
+          
+          echo -e "تم الانتهاء من معالجة فيديو: ${{ env.video_title }}\n\nالرابط المباشر للتحميل:\n$DIRECT_LINK" | \
+          mail -s "تم تحويل الفيديو الخاص بك بنجاح!" ddt42202@gmail.com
