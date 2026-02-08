@@ -1,4 +1,4 @@
-name: Video Downloader - Fast & Direct
+name: Video Master - iPhone Ready
 
 on:
   workflow_dispatch:
@@ -7,11 +7,11 @@ on:
         description: 'رابط الفيديو'
         required: true
       episode_name:
-        description: 'اسم الحلقة'
+        description: 'اسم الحلقة (عربي أو إنجليزي)'
         required: true
 
 jobs:
-  convert_and_link:
+  process:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -26,30 +26,35 @@ jobs:
           sudo chmod a+rx /usr/local/bin/yt-dlp
           sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download
+      - name: Download and Convert
         run: |
           mkdir -p output
+          # تحميل بأعلى جودة وتغيير الاسم للاسم المطلوب
           yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
           --merge-output-format mp4 \
           -o "output/${{ github.event.inputs.episode_name }}.mp4" \
           "${{ github.event.inputs.video_url }}"
 
-      - name: Upload
+      - name: Upload to Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: "v${{ github.run_number }}"
-          files: "output/${{ github.event.inputs.episode_name }}.mp4"
+          files: "output/*.mp4"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Print Direct Link
+      - name: Generate iPhone Link
         run: |
-          # تنظيف الاسم وتجهيز الرابط النهائي
-          CLEAN_NAME=$(echo "${{ github.event.inputs.episode_name }}.mp4" | sed 's/ /./g')
-          DIRECT_LINK="https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/$CLEAN_NAME"
+          # كود بايثون لضمان عمل الحروف العربية في الروابط
+          REPO="${{ github.repository }}"
+          RUN_ID="v${{ github.run_number }}"
+          FILE_NAME="${{ github.event.inputs.episode_name }}.mp4"
+          
+          PYTHON_LINK=$(python3 -c "import urllib.parse; print(f'https://github.com/{ \"$REPO\" }/releases/download/{ \"$RUN_ID\" }/' + urllib.parse.quote('$FILE_NAME'))")
           
           echo "=========================================================="
-          echo "تم الإنجاز! الرابط المباشر لحلقتك هو:"
-          echo "$DIRECT_LINK"
+          echo "تم الإنجاز بنجاح!"
+          echo "الرابط المباشر (انسخه وضعه في المتصفح):"
+          echo "$PYTHON_LINK"
           echo "=========================================================="
