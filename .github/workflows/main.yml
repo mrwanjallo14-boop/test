@@ -1,4 +1,4 @@
-name: Video Converter & JSON Factory
+name: Safari Video Factory
 on:
   workflow_dispatch:
     inputs:
@@ -10,12 +10,12 @@ on:
         required: true
 
 jobs:
-  process-and-json:
+  convert-and-log:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Tools
         run: |
@@ -24,38 +24,31 @@ jobs:
           pip install yt-dlp
 
       - name: Create Videos Directory
-        run: mkdir -p videos # هذا السطر هو الحل للمشكلة الأخيرة
+        run: mkdir -p videos
 
-      - name: Download & Convert to Safari MP4
+      - name: Download & Convert
         run: |
-          # تحميل الفيديو بأفضل جودة ممكنة
           yt-dlp -f "bestvideo+bestaudio/best" "${{ github.event.inputs.video_url }}" -o "raw_video"
-          
-          # التحويل بصيغة Safari (h264 + aac) مع ضمان وجود المجلد
           ffmpeg -i raw_video -vcodec libx264 -acodec aac -movflags +faststart "videos/${{ github.event.inputs.video_name }}.mp4"
+          rm raw_video
 
-      - name: Commit Video to Repo
+      - name: Save Video
         run: |
           git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.name "VideoBot"
           git add videos/*.mp4
-          git commit -m "إضافة فيديو جديد: ${{ github.event.inputs.video_name }}"
+          git commit -m "Add video: ${{ github.event.inputs.video_name }}"
           git push
 
-      - name: Generate JSON File
+      - name: 📋 PRINT DATA FOR FIREBASE
         run: |
-          # الرابط المباشر من GitHub
-          REPO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/videos/${{ github.event.inputs.video_name }}.mp4"
+          REPO_NAME="${{ github.repository }}"
+          DIRECT_URL="https://raw.githubusercontent.com/$REPO_NAME/main/videos/${{ github.event.inputs.video_name }}.mp4"
           
-          # تنسيق JSON جاهز للإضافة دون مسح البيانات
-          echo "{" > video_info.json
-          echo "  \"name\": \"${{ github.event.inputs.video_name }}\"," >> video_info.json
-          echo "  \"url\": \"$REPO_URL\"," >> video_info.json
-          echo "  \"groupId\": \"لوس\"" >> video_info.json
-          echo "}" >> video_info.json
-
-      - name: Download Your JSON
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ github.event.inputs.video_name }}-JSON
-          path: video_info.json
+          echo "--------------------------------------------------"
+          echo "🚀 انسخ البيانات التالية وادخلها في Firebase:"
+          echo "--------------------------------------------------"
+          echo "NAME: ${{ github.event.inputs.video_name }}"
+          echo "URL: $DIRECT_URL"
+          echo "GROUP_ID: لوس"
+          echo "--------------------------------------------------"
