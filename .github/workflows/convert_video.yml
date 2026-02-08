@@ -1,4 +1,4 @@
-name: Remote Video Downloader, Converter & Email Notification
+name: Video Downloader - Custom Episode Name
 
 on:
   workflow_dispatch:
@@ -6,50 +6,53 @@ on:
       video_url:
         description: 'ضع رابط الفيديو هنا'
         required: true
+      episode_name:
+        description: 'اكتب اسم الحلقة (مثلاً: الحلقة الأولى)'
+        required: true
 
 jobs:
-  download_and_convert:
+  process:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Tools (yt-dlp, ffmpeg, mailutils)
+      - name: Install Tools
         run: |
           sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
           sudo chmod a+rx /usr/local/bin/yt-dlp
           sudo apt-get update && sudo apt-get install -y ffmpeg mailutils
 
-      - name: Download and Convert
-        id: process_video
+      - name: Download & Rename
         run: |
           mkdir -p output
-          # تحميل الفيديو وتحويله لـ mp4
+          # تحميل الفيديو وتسميته بالاسم الذي اخترته
           yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
           --merge-output-format mp4 \
-          -o "output/video_result.mp4" \
+          -o "output/${{ github.event.inputs.episode_name }}.mp4" \
           "${{ github.event.inputs.video_url }}"
-          
-          # الحصول على اسم الفيديو الأصلي لإرساله في الإيميل
-          TITLE=$(yt-dlp --get-title "${{ github.event.inputs.video_url }}")
-          echo "video_title=$TITLE" >> $GITHUB_ENV
 
-      - name: Upload to GitHub Releases
-        id: create_release
+      - name: Upload to Release
+        id: upload_video
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ github.run_number }}
-          files: output/video_result.mp4
+          tag_name: "Release-${{ github.run_number }}"
+          files: "output/${{ github.event.inputs.episode_name }}.mp4"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Send Email Notification
         run: |
-          # الرابط المباشر للملف في الـ Release
-          DIRECT_LINK="https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/video_result.mp4"
+          # تجهيز الرابط المباشر
+          # ملاحظة: يتم استبدال المسافات في الاسم بـ . ليتحول لرابط صالح
+          FILE_NAME=$(echo "${{ github.event.inputs.episode_name }}.mp4" | sed 's/ /./g')
+          DIRECT_LINK="https://github.com/${{ github.repository }}/releases/download/Release-${{ github.run_number }}/$FILE_NAME"
           
-          echo -e "تم الانتهاء من معالجة فيديو: ${{ env.video_title }}\n\nالرابط المباشر للتحميل:\n$DIRECT_LINK" | \
-          mail -s "تم تحويل الفيديو الخاص بك بنجاح!" ddt42202@gmail.com
+          # محتوى الإيميل
+          SUBJECT="تم تجهيز: ${{ github.event.inputs.episode_name }}"
+          BODY="أهلاً بك،\n\nتم تحويل ورفع الحلقة بنجاح.\n\nاسم الحلقة: ${{ github.event.inputs.episode_name }}\nالرابط المباشر: $DIRECT_LINK"
+          
+          echo -e "$BODY" | mail -s "$SUBJECT" ddt42202@gmail.com
