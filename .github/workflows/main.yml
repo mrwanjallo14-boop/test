@@ -1,17 +1,19 @@
-name: Super Video Bot
+name: Video Converter & JSON Factory
 on:
   workflow_dispatch:
     inputs:
       video_url:
-        description: 'رابط الفيديو'
+        description: 'رابط الفيديو (MKV أو غيره)'
         required: true
       video_name:
-        description: 'اسم الفيديو ليظهر في الموقع'
+        description: 'اسم الفيديو'
         required: true
 
 jobs:
-  process-video:
+  process-and-json:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # لإعطاء البوت صلاحية حفظ الفيديو في مستودعك
     steps:
       - uses: actions/checkout@v3
 
@@ -20,19 +22,37 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           pip install yt-dlp
-          npm install firebase-admin
 
-      - name: Download & Convert
+      - name: Download & Convert to Safari MP4
         run: |
-          # تحميل الفيديو بأفضل جودة وتحويله لـ mp4 (Safari Friendly)
-          yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
-          "${{ github.event.inputs.video_url }}" -o "video_raw.tmp"
+          # تحميل الفيديو
+          yt-dlp -f "bestvideo+bestaudio/best" "${{ github.event.inputs.video_url }}" -o "raw_video"
           
-          ffmpeg -i video_raw.tmp -vcodec libx264 -acodec aac -strict -2 "final_video.mp4"
+          # التحويل لصيغة Safari (h264 + aac)
+          ffmpeg -i raw_video -vcodec libx264 -acodec aac -movflags +faststart "videos/${{ github.event.inputs.video_name }}.mp4"
 
-      - name: Upload to Firebase & Update Site
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
-          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-        run: node upload.js "final_video.mp4" "${{ github.event.inputs.video_name }}"
+      - name: Commit Video to Repo
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          mkdir -p videos
+          git add videos/*.mp4
+          git commit -m "إضافة فيديو جديد: ${{ github.event.inputs.video_name }}"
+          git push
+
+      - name: Generate JSON File
+        run: |
+          # إنشاء رابط الفيديو المباشر من GitHub Pages أو المستودع
+          REPO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/videos/${{ github.event.inputs.video_name }}.mp4"
+          
+          echo "{" > video_info.json
+          echo "  \"name\": \"${{ github.event.inputs.video_name }}\"," >> video_info.json
+          echo "  \"url\": \"$REPO_URL\"," >> video_info.json
+          echo "  \"groupId\": \"لوس\"" >> video_info.json # هنا ثبتنا القروب باسم لوس كما طلبت
+          echo "}" >> video_info.json
+
+      - name: Download Your JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.video_name }}-JSON
+          path: video_info.json
