@@ -236,11 +236,19 @@
         function playMedia(url) {
             if (!url) { videoElement.src = ""; if (hls) hls.destroy(); lastUrl = ""; return; }
             if (url === lastUrl) return;
+            
+            // تنظيف الرابط إذا كان به فراغات
+            url = url.trim();
             lastUrl = url;
+
             if (Hls.isSupported() && (url.includes('m3u8') || url.includes('.ts'))) {
                 hls.destroy(); hls = new Hls();
                 hls.loadSource(url); hls.attachMedia(videoElement);
-            } else { videoElement.src = url; }
+            } else { 
+                // تشغيل روابط MP4 المباشرة (بما فيها GitHub Releases)
+                videoElement.src = url; 
+                videoElement.load(); // ضروري للجوال لتحميل المصدر الجديد
+            }
             videoElement.play().catch(function(e){});
         }
 
