@@ -1,12 +1,14 @@
-name: Video Converter to MP4
+name: Remote Video Downloader & Converter
 
 on:
-  push:
-    paths:
-      - 'uploads/**' # سيتم التفعيل عند إضافة فيديو في مجلد uploads
+  workflow_dispatch:
+    inputs:
+      video_url:
+        description: 'ضع رابط الفيديو هنا'
+        required: true
 
 jobs:
-  convert:
+  download_and_convert:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -15,23 +17,24 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
-      - name: Convert Video
+      - name: Install Tools (yt-dlp & ffmpeg)
         run: |
-          mkdir -p processed_videos
-          for file in uploads/*.{mkv,avi,mov,flv,wmv,webm}; do
-            if [ -f "$file" ]; then
-              filename=$(basename "$file" | cut -f 1 -d '.')
-              ffmpeg -i "$file" -codec copy "processed_videos/${filename}.mp4"
-            fi
-          done
+          sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+          sudo chmod a+rx /usr/local/bin/yt-dlp
+          sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Upload to Release
+      - name: Download and Convert
+        run: |
+          mkdir -p output
+          yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+          --merge-output-format mp4 \
+          -o "output/%(title)s.%(ext)s" \
+          "${{ github.event.inputs.video_url }}"
+
+      - name: Upload to GitHub Releases (Direct Link)
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: videos-collection
-          files: processed_videos/*.mp4
+          tag_name: converted-videos
+          files: output/*.mp4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
