@@ -1,4 +1,4 @@
-name: Video Master - Ultimate iPhone Edition
+name: Video Master - Repo Hosting
 
 on:
   workflow_dispatch:
@@ -7,59 +7,41 @@ on:
         description: 'رابط الفيديو'
         required: true
       episode_name:
-        description: 'اسم الحلقة (عربي أو إنجليزي)'
+        description: 'اسم الحلقة (بالإنجليزي أفضل للروابط)'
         required: true
 
 jobs:
-  process:
+  host_video:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Tools (yt-dlp & FFmpeg)
+      - name: Install Tools
         run: |
           sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
           sudo chmod a+rx /usr/local/bin/yt-dlp
           sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download & iPhone Encoding
+      - name: Download & iPhone Convert
         run: |
-          mkdir -p output
-          # تحميل الفيديو الأصلي مهما كان نوعه (MKV, WEBM, etc)
+          mkdir -p videos
           yt-dlp -f "bestvideo+bestaudio/best" \
           --merge-output-format mp4 \
-          -o "output/raw_video.mp4" \
+          -o "temp.mp4" \
           "${{ github.event.inputs.video_url }}"
+          
+          # تحويل للأيفون وحفظه في مجلد videos
+          ffmpeg -i temp.mp4 -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k "videos/${{ github.event.inputs.episode_name }}.mp4"
+          rm temp.mp4
 
-          # إعادة الترميز ليكون H.264 + AAC (المواصفات القياسية للايفون)
-          ffmpeg -i output/raw_video.mp4 -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k "output/${{ github.event.inputs.episode_name }}.mp4"
-          rm output/raw_video.mp4
-
-      - name: Upload to Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: "v${{ github.run_number }}"
-          files: "output/*.mp4"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate Direct iPhone Link
+      - name: Commit and Push to Repo
         run: |
-          # كود بايثون لضمان تحويل الحروف العربية لروابط صالحة 100%
-          REPO="${{ github.repository }}"
-          RUN_ID="v${{ github.run_number }}"
-          FILE_NAME="${{ github.event.inputs.episode_name }}.mp4"
-          
-          PYTHON_LINK=$(python3 -c "import urllib.parse; print(f'https://github.com/{ \"$REPO\" }/releases/download/{ \"$RUN_ID\" }/' + urllib.parse.quote('$FILE_NAME'))")
-          
-          echo "=========================================================="
-          echo "✅ تمت العملية بنجاح يا بطل!"
-          echo "📦 الحلقة: ${{ github.event.inputs.episode_name }}"
-          echo "🔗 الرابط المباشر (انسخه للايفون):"
-          echo "$PYTHON_LINK"
-          echo "=========================================================="
+          git config --global user.name "VideoBot"
+          git config --global user.email "bot@github.com"
+          git add videos/*.mp4
+          git commit -m "Add episode: ${{ github.event.inputs.episode_name }}"
+          git push
