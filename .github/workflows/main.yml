@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       video_url:
-        description: 'رابط الفيديو (MKV أو غيره)'
+        description: 'رابط الفيديو'
         required: true
       video_name:
         description: 'اسم الفيديو'
@@ -13,7 +13,7 @@ jobs:
   process-and-json:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # لإعطاء البوت صلاحية حفظ الفيديو في مستودعك
+      contents: write
     steps:
       - uses: actions/checkout@v3
 
@@ -23,32 +23,35 @@ jobs:
           sudo apt-get install -y ffmpeg
           pip install yt-dlp
 
+      - name: Create Videos Directory
+        run: mkdir -p videos # هذا السطر هو الحل للمشكلة الأخيرة
+
       - name: Download & Convert to Safari MP4
         run: |
-          # تحميل الفيديو
+          # تحميل الفيديو بأفضل جودة ممكنة
           yt-dlp -f "bestvideo+bestaudio/best" "${{ github.event.inputs.video_url }}" -o "raw_video"
           
-          # التحويل لصيغة Safari (h264 + aac)
+          # التحويل بصيغة Safari (h264 + aac) مع ضمان وجود المجلد
           ffmpeg -i raw_video -vcodec libx264 -acodec aac -movflags +faststart "videos/${{ github.event.inputs.video_name }}.mp4"
 
       - name: Commit Video to Repo
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          mkdir -p videos
           git add videos/*.mp4
           git commit -m "إضافة فيديو جديد: ${{ github.event.inputs.video_name }}"
           git push
 
       - name: Generate JSON File
         run: |
-          # إنشاء رابط الفيديو المباشر من GitHub Pages أو المستودع
+          # الرابط المباشر من GitHub
           REPO_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/videos/${{ github.event.inputs.video_name }}.mp4"
           
+          # تنسيق JSON جاهز للإضافة دون مسح البيانات
           echo "{" > video_info.json
           echo "  \"name\": \"${{ github.event.inputs.video_name }}\"," >> video_info.json
           echo "  \"url\": \"$REPO_URL\"," >> video_info.json
-          echo "  \"groupId\": \"لوس\"" >> video_info.json # هنا ثبتنا القروب باسم لوس كما طلبت
+          echo "  \"groupId\": \"لوس\"" >> video_info.json
           echo "}" >> video_info.json
 
       - name: Download Your JSON
