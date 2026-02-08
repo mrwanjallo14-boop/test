@@ -1,4 +1,4 @@
-name: Video Master - iPhone Ready
+name: Video Master - Ultimate iPhone Edition
 
 on:
   workflow_dispatch:
@@ -20,20 +20,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Tools
+      - name: Setup Tools (yt-dlp & FFmpeg)
         run: |
           sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
           sudo chmod a+rx /usr/local/bin/yt-dlp
           sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download and Convert
+      - name: Download & iPhone Encoding
         run: |
           mkdir -p output
-          # تحميل بأعلى جودة وتغيير الاسم للاسم المطلوب
-          yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
+          # تحميل الفيديو الأصلي مهما كان نوعه (MKV, WEBM, etc)
+          yt-dlp -f "bestvideo+bestaudio/best" \
           --merge-output-format mp4 \
-          -o "output/${{ github.event.inputs.episode_name }}.mp4" \
+          -o "output/raw_video.mp4" \
           "${{ github.event.inputs.video_url }}"
+
+          # إعادة الترميز ليكون H.264 + AAC (المواصفات القياسية للايفون)
+          ffmpeg -i output/raw_video.mp4 -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k "output/${{ github.event.inputs.episode_name }}.mp4"
+          rm output/raw_video.mp4
 
       - name: Upload to Release
         id: create_release
@@ -44,9 +48,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate iPhone Link
+      - name: Generate Direct iPhone Link
         run: |
-          # كود بايثون لضمان عمل الحروف العربية في الروابط
+          # كود بايثون لضمان تحويل الحروف العربية لروابط صالحة 100%
           REPO="${{ github.repository }}"
           RUN_ID="v${{ github.run_number }}"
           FILE_NAME="${{ github.event.inputs.episode_name }}.mp4"
@@ -54,7 +58,8 @@ jobs:
           PYTHON_LINK=$(python3 -c "import urllib.parse; print(f'https://github.com/{ \"$REPO\" }/releases/download/{ \"$RUN_ID\" }/' + urllib.parse.quote('$FILE_NAME'))")
           
           echo "=========================================================="
-          echo "تم الإنجاز بنجاح!"
-          echo "الرابط المباشر (انسخه وضعه في المتصفح):"
+          echo "✅ تمت العملية بنجاح يا بطل!"
+          echo "📦 الحلقة: ${{ github.event.inputs.episode_name }}"
+          echo "🔗 الرابط المباشر (انسخه للايفون):"
           echo "$PYTHON_LINK"
           echo "=========================================================="
