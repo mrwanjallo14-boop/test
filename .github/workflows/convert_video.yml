@@ -1,4 +1,4 @@
-name: Video Master - Repo Hosting
+name: Video Master - Original Quality Hosting
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
         description: 'رابط الفيديو'
         required: true
       episode_name:
-        description: 'اسم الحلقة (بالإنجليزي أفضل للروابط)'
+        description: 'اسم الحلقة (بالإنجليزي أفضل)'
         required: true
 
 jobs:
@@ -20,28 +20,25 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Tools
+      - name: Install yt-dlp
         run: |
           sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
           sudo chmod a+rx /usr/local/bin/yt-dlp
-          sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download & iPhone Convert
+      - name: Download Original Quality
         run: |
           mkdir -p videos
+          # تحميل أفضل جودة فيديو وأفضل جودة صوت ودمجهم في حاوية mp4 دون تغيير الترميز
           yt-dlp -f "bestvideo+bestaudio/best" \
           --merge-output-format mp4 \
-          -o "temp.mp4" \
+          --remux-video mp4 \
+          -o "videos/${{ github.event.inputs.episode_name }}.mp4" \
           "${{ github.event.inputs.video_url }}"
-          
-          # تحويل للأيفون وحفظه في مجلد videos
-          ffmpeg -i temp.mp4 -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k "videos/${{ github.event.inputs.episode_name }}.mp4"
-          rm temp.mp4
 
       - name: Commit and Push to Repo
         run: |
           git config --global user.name "VideoBot"
           git config --global user.email "bot@github.com"
           git add videos/*.mp4
-          git commit -m "Add episode: ${{ github.event.inputs.episode_name }}"
+          git commit -m "Add original quality: ${{ github.event.inputs.episode_name }}"
           git push
