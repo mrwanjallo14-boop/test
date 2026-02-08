@@ -1,17 +1,17 @@
-name: Video Downloader - Custom Episode Name
+name: Video Downloader - Fast & Direct
 
 on:
   workflow_dispatch:
     inputs:
       video_url:
-        description: 'ضع رابط الفيديو هنا'
+        description: 'رابط الفيديو'
         required: true
       episode_name:
-        description: 'اكتب اسم الحلقة (مثلاً: الحلقة الأولى)'
+        description: 'اسم الحلقة'
         required: true
 
 jobs:
-  process:
+  convert_and_link:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -20,39 +20,36 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Tools
+      - name: Setup Tools
         run: |
           sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
           sudo chmod a+rx /usr/local/bin/yt-dlp
-          sudo apt-get update && sudo apt-get install -y ffmpeg mailutils
+          sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - name: Download & Rename
+      - name: Download
         run: |
           mkdir -p output
-          # تحميل الفيديو وتسميته بالاسم الذي اخترته
           yt-dlp -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" \
           --merge-output-format mp4 \
           -o "output/${{ github.event.inputs.episode_name }}.mp4" \
           "${{ github.event.inputs.video_url }}"
 
-      - name: Upload to Release
-        id: upload_video
+      - name: Upload
+        id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "Release-${{ github.run_number }}"
+          tag_name: "v${{ github.run_number }}"
           files: "output/${{ github.event.inputs.episode_name }}.mp4"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Send Email Notification
+      - name: Print Direct Link
         run: |
-          # تجهيز الرابط المباشر
-          # ملاحظة: يتم استبدال المسافات في الاسم بـ . ليتحول لرابط صالح
-          FILE_NAME=$(echo "${{ github.event.inputs.episode_name }}.mp4" | sed 's/ /./g')
-          DIRECT_LINK="https://github.com/${{ github.repository }}/releases/download/Release-${{ github.run_number }}/$FILE_NAME"
+          # تنظيف الاسم وتجهيز الرابط النهائي
+          CLEAN_NAME=$(echo "${{ github.event.inputs.episode_name }}.mp4" | sed 's/ /./g')
+          DIRECT_LINK="https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/$CLEAN_NAME"
           
-          # محتوى الإيميل
-          SUBJECT="تم تجهيز: ${{ github.event.inputs.episode_name }}"
-          BODY="أهلاً بك،\n\nتم تحويل ورفع الحلقة بنجاح.\n\nاسم الحلقة: ${{ github.event.inputs.episode_name }}\nالرابط المباشر: $DIRECT_LINK"
-          
-          echo -e "$BODY" | mail -s "$SUBJECT" ddt42202@gmail.com
+          echo "=========================================================="
+          echo "تم الإنجاز! الرابط المباشر لحلقتك هو:"
+          echo "$DIRECT_LINK"
+          echo "=========================================================="
